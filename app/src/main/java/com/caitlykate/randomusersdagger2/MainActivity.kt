@@ -7,9 +7,11 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.caitlykate.randomusersdagger2.adapter.RandomUserAdapter
+import com.caitlykate.randomusersdagger2.component.DaggerRandomUserComponent
 import com.caitlykate.randomusersdagger2.interfaces.RandomUsersApi
 import com.caitlykate.randomusersdagger2.model.ApiResponse
 import com.caitlykate.randomusersdagger2.model.Result
+import com.caitlykate.randomusersdagger2.module.ContextModule
 import com.google.gson.GsonBuilder
 import com.jakewharton.picasso.OkHttp3Downloader
 import com.squareup.picasso.Picasso
@@ -33,24 +35,29 @@ Picasso — работа с изображениями в Adapter
 */
 class MainActivity : AppCompatActivity() {
 
-    lateinit var retrofit: Retrofit
+
     lateinit var recyclerView: RecyclerView
     lateinit var picasso: Picasso
     lateinit var mAdapter: RandomUserAdapter
+    lateinit var randomUsersApi: RandomUsersApi
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         init()
-        beforeDagger2();
+        //beforeDagger2()
+        afterDagger2()
         populateUsers()
     }
+
 
     private fun init() {
         recyclerView = findViewById(R.id.recyclerView)
         recyclerView.layoutManager = LinearLayoutManager(this)
-    }
 
+    }
+/*
     private fun beforeDagger2() {
         val gsonBuilder = GsonBuilder()
         val gson = gsonBuilder.create()
@@ -77,10 +84,19 @@ class MainActivity : AppCompatActivity() {
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
+*/
 
+    private fun afterDagger2() {
+        val daggerRandomUserComponent = DaggerRandomUserComponent.builder()
+            .contextModule(ContextModule(this)).build()
+        randomUsersApi = daggerRandomUserComponent.randomUsersApi
+        picasso = daggerRandomUserComponent.picasso
+        mAdapter = RandomUserAdapter(picasso)
+        recyclerView.adapter = mAdapter
+    }
 
     private fun populateUsers() {
-        val randomUsersCall = retrofit.create(RandomUsersApi::class.java).getRandomUsers(30)
+        val randomUsersCall = randomUsersApi.getRandomUsers(30)
         Log.d("MyLog", "0")
         //val randomUsersCall = getRandomUserService().getRandomUsers(10)
         randomUsersCall!!.enqueue(object : Callback<ApiResponse> {
